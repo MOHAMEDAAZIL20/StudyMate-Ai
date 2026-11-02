@@ -1,15 +1,18 @@
 # StudyMate AI
 
-A local, personalized study assistant for college students. **Phase 1: project foundation.** No paid services required.
+A local, personalized study assistant for college students. **Phase 2: persistent academic workspace.** No paid services required.
 
 ## What works now
 
 - Responsive React dashboard and seven navigable destinations, with browser back/forward support.
-- Clearly labeled sample subjects, materials, exams, and progress. Search sample subjects on My subjects.
+- Create and rename semesters, subjects, units, and topics; delete individual items with confirmation and parent-child protection.
+- Search subjects, units, and topics within a semester; mark topics complete.
+- Import syllabus topics by pasting text or reviewing a UTF-8 TXT file.
+- Dashboard counts and subject progress come from actual saved records.
 - Live backend/database connection status with retry and an unavailable state.
 - FastAPI `/api/health`, interactive API docs, SQLAlchemy sessions, and a local SQLite database.
 
-Subject editing, uploads, AI, quizzes, recommendations, and planning are future phases. Navigation destinations explain their availability. No student records or AI answers are fabricated. Demo data lives only in `frontend/src/demo.ts` and the dashboard presentation.
+Document uploads, AI, quizzes, recommendations, and exam planning are future phases. No student records are seeded. The old Phase 1 fixtures remain isolated in `frontend/src/demo.ts` and are no longer displayed. TXT syllabus selection only imports topic names; it does not preserve an original document. Document storage and PDF/PPTX extraction arrive in Phase 3.
 
 ## Windows setup
 
@@ -63,9 +66,9 @@ npm run build
 ```
 
 1. Confirm health returns `status: ok` and `database: connected`.
-2. Check `backend/data/studymate.db` exists. No student tables exist until Phase 2.
+2. Check `backend/data/studymate.db` exists. The database now contains semesters, subjects, units, and topics.
 3. Open every sidebar destination; use browser Back and Forward.
-4. Search for `database` on My subjects; an unmatched search shows an empty state.
+4. Follow the Phase 2 walkthrough below, then search for one of your saved subject or topic names.
 5. Resize to phone width and use the navigation menu.
 6. Stop the backend, click Retry (or reload), and confirm Backend unavailable. Restart it and retry to reconnect.
 
@@ -77,8 +80,27 @@ FastAPI handles HTTP requests in Python. Pydantic defines the health response sh
 
 Important files: `frontend/src/main.tsx` (UI and navigation), `frontend/src/styles.css` (responsive design), `frontend/src/demo.ts` (sample records), `backend/app/main.py` (API), `backend/app/database.py` (database foundation), and `backend/tests/test_health.py` (API tests).
 
-Before Phase 2, learn React state and props, HTTP GET/POST, JSON, primary/foreign keys, and basic SQL tables. See ARCHITECTURE.md and PROJECT_PLAN.md for the next steps.
+Before Phase 3, learn HTTP multipart uploads, file validation, Python file paths, and database transactions. See ARCHITECTURE.md and PROJECT_PLAN.md for the next steps.
 
 ## Limits
 
 Local development only; production deployment, authentication, dark mode, document storage, and AI are not part of Phase 1. Scanned PDFs will need a separate OCR pipeline when uploads arrive. Never delete the database as a routine reset; future schema changes must preserve student data.
+
+
+## Phase 2 walkthrough
+
+1. Open **My subjects** → **Add semester**, for example Semester 3.
+2. Use the **+** beside Subjects to add a subject, then **Add unit**.
+3. Add a topic or choose **Import syllabus text**. Paste one topic per line or select a UTF-8 `.txt` file up to 100 KB. Review the text; import supports up to 200 lines of 120 characters each. Duplicates in that unit are skipped without changing existing completion.
+4. Tick a topic checkbox. Refresh the page: completion persists. Open Overview to see the stored counts and progress.
+5. Use pencil controls to rename records. Search matches subject, unit, and topic names within the selected semester.
+6. Removal asks for confirmation. Remove individual topics before their unit, units before their subject, and subjects before their semester. The API refuses cascading deletion.
+7. Stop and restart FastAPI, then reload: your hierarchy remains in SQLite. Avoid deleting the database file.
+
+API routes: `GET /api/workspace`; `POST /api/{semesters|subjects|units|topics}`; `PUT` and `DELETE /api/{resource}/{id}`; `POST /api/units/{id}/syllabus`. Explore validated request bodies at `/docs`. PUT renames records; for topics it includes the completed flag. Parent reassignment is intentionally not supported.
+
+New important files: `backend/app/models.py` (tables and foreign keys), `schemas.py` (input validation), `academics.py` (resource endpoints); `frontend/src/api.ts` (typed HTTP client), `AcademicWorkspace.tsx` (workspace, dashboard, and editors).
+
+React sends JSON through Vite to FastAPI. Pydantic validates input, SQLAlchemy commits a transaction, and React reloads the saved workspace. A foreign key stores the parent record's ID, so every topic belongs to a real unit. Checkbox completion is self-reported progress, not a measure of mastery.
+
+The Phase 2 database upgrade is additive: startup creates four previously absent tables and never drops or recreates existing tables. It does not support changing existing table columns. Back up the SQLite file with the backend stopped before future schema changes; a versioned migration system must be introduced before altering this schema.

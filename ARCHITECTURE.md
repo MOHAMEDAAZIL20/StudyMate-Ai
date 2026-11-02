@@ -1,6 +1,6 @@
 # Architecture
 
-## Phase 1 components
+## Current components (Phase 2)
 
 ```text
 Browser: React + TypeScript + Lucide + Tailwind/CSS
@@ -30,7 +30,14 @@ Phase 1 defines the declarative Base, engine, and request-session dependency. Th
 
 - `GET /api/health`: 200 `{ "status": "ok", "database": "connected", "version": "0.1.0" }`; database query failures return 503 with a generic message.
 - `/docs` and `/openapi.json`: generated FastAPI reference.
-- Future resource endpoints use `/api/semesters`, `/api/subjects`, etc.; no CRUD endpoints exist yet.
+- `GET /api/workspace`: ordered lists of all four academic resources for this local single-user workspace.
+- `POST /api/semesters`, `/api/subjects`, `/api/units`, `/api/topics`: create validated records.
+- `PUT /api/{resource}/{id}`: rename; topics require the completed flag as well. No parent reassignment.
+- `DELETE /api/{resource}/{id}`: 204 on success, 409 if children remain, 404 if missing.
+- `POST /api/units/{id}/syllabus`: atomic topic-name import (1–200 names); skips existing case-insensitive duplicates and preserves completion.
+- Validation errors: 422; duplicate conflicts: 409; missing records/parents: 404.
+
+Phase 2 migration: `create_all` adds only absent tables to the existing Phase 1 database. Existing tables and data are never dropped. This is an additive bootstrap, not a general migration engine. Introduce versioned migrations before changing existing columns or constraints.
 
 ## Planned RAG pipeline (Phase 4)
 
@@ -41,3 +48,7 @@ If context is insufficient, say so. If the model is missing, show setup instruct
 ## Prototype boundary
 
 Single-user loopback development. Authentication and hosted access are deferred. Demo content stays separate from persistent user records. AI and recommendations are deliberately absent until their approved phases. Weakness scores will be explainable revision-priority rules based on mistakes and recency, not claims of measured mastery.
+
+## Frontend academic workspace
+
+`api.ts` centralizes typed JSON requests and request timeouts. `AcademicWorkspace.tsx` provides actual-data overview and hierarchy editors. Native dialog elements provide modal focus management and Escape handling. Mutations disable controls while saving, surface validation/API failures, and reload authoritative database records. Empty and failed-load states do not fall back to sample records. Search is local to the selected semester. TXT syllabus files are parsed in the browser for review; only topic strings are sent to the API. No original files are stored in Phase 2.

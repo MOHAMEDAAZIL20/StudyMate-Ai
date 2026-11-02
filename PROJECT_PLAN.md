@@ -19,7 +19,7 @@
 - Test dependency warning: installed Starlette deprecates its httpx test adapter in favor of httpx2. Existing tests pass; review that migration with the next dependency update.
 
 ## Approval checkpoint
-Stop after Phase 1. Begin Phase 2 only after the user's explicit approval.
+The user approved Phase 2. Stop after Phase 2; Phase 3 requires explicit approval.
 
 ## Remaining phases
 2. Semesters, subjects, units, topics; persistent CRUD and topic completion.
@@ -31,8 +31,23 @@ Stop after Phase 1. Begin Phase 2 only after the user's explicit approval.
 8. Comprehensive tests, accessibility, responsive polish, free-tool deployment strategy.
 
 ## Known limitations
-- No Phase 2+ mutations or AI capabilities are enabled.
-- Dashboard sample values are not stored student analytics.
+- Phase 2 academic mutations are enabled. Document storage and Phase 3+ features remain pending.
+- Dashboard now uses saved academic records; topic completion is self-reported progress.
 - Python installation exists but command aliases/launcher registration need repair outside the project; documented absolute interpreter works.
-- Backend initialization creates the SQLite file, with no domain tables yet. Schema migration strategy belongs to Phase 2.
+- Phase 2 adds academic tables without dropping data. Future column changes require versioned migrations.
 - Local frontend dev proxy is required for same-origin API requests; production serving is deferred.
+
+
+## Phase 2 — Academic workspace
+- [x] Persistent semester, subject, unit, and topic creation/rename/deletion.
+- [x] Parent validation, name validation/uniqueness, SQLite foreign keys, protected parent deletion.
+- [x] Topic completion, search within semester, saved-data dashboard and subject progress.
+- [x] Reviewable syllabus text/TXT import, bounded size/topic lengths/count, duplicate handling.
+- [x] Empty/loading/error states, save feedback, native editor dialogs, removal confirmation.
+- [x] Additive table initialization; existing database preserved; documented migration boundary.
+- [x] Automated behavioral coverage for hierarchy, input errors, conflicts, completion persistence, import atomicity/deduplication, and safe deletion.
+- [x] Frontend TypeScript + production build; backend 5 tests passed; existing test-adapter deprecation warning remains.
+- [x] Browser verification: real empty dashboard, navigation to My subjects, Add semester dialog, whitespace-only name prevents Save, Escape closes dialog. Current preview layout visually inspected.- [x] Live Vite-proxied `/api/workspace` returned the actual empty academic workspace; `/openapi.json` returned HTTP 200 with the new routes.
+- [ ] Full populated browser walkthrough and phone-width visual QA remain manual; API mutation workflows are covered by automated tests.
+
+Document upload preservation, PDF/PPTX syllabus extraction, and material-to-unit associations are deliberately Phase 3. Phase 2 TXT syllabus import creates topic records only. No AI functionality was added. No new dependencies were required.

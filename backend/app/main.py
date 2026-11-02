@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from .database import get_session, initialize_database
 from .academics import router
+from .documents import router as documents_router, UploadSizeLimitMiddleware
 
 
 @asynccontextmanager
@@ -18,6 +19,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="StudyMate AI", version="0.1.0", lifespan=lifespan)
 app.include_router(router)
+app.include_router(documents_router)
+app.add_middleware(UploadSizeLimitMiddleware)
 
 
 class HealthResponse(BaseModel):

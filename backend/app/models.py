@@ -1,5 +1,6 @@
 """Phase 2 academic hierarchy. Parents cannot be deleted while children exist."""
-from sqlalchemy import Boolean, ForeignKey, String, UniqueConstraint
+from datetime import datetime, timezone
+from sqlalchemy import Boolean, ForeignKey, String, UniqueConstraint, Text, DateTime, JSON
 from sqlalchemy.orm import Mapped, mapped_column
 from .database import Base
 
@@ -33,3 +34,19 @@ class Topic(Base):
     unit_id: Mapped[int] = mapped_column(ForeignKey("units.id", ondelete="RESTRICT"))
     name: Mapped[str] = mapped_column(String(120))
     completed: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+class Document(Base):
+    __tablename__ = "documents"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    subject_id: Mapped[int] = mapped_column(ForeignKey("subjects.id", ondelete="RESTRICT"), index=True)
+    unit_id: Mapped[int | None] = mapped_column(ForeignKey("units.id", ondelete="RESTRICT"), nullable=True, index=True)
+    name: Mapped[str] = mapped_column(String(200))
+    storage_key: Mapped[str] = mapped_column(String(64), unique=True)
+    file_type: Mapped[str] = mapped_column(String(8))
+    size_bytes: Mapped[int]
+    status: Mapped[str] = mapped_column(String(24))
+    warning: Mapped[str | None] = mapped_column(Text, nullable=True)
+    text: Mapped[str] = mapped_column(Text)
+    sections: Mapped[list] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))

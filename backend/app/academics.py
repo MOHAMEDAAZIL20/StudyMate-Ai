@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from .database import get_session
-from .models import Semester, Subject, Unit, Topic
+from .models import Semester, Subject, Unit, Topic, Document
 from .schemas import (NamedInput, SubjectInput, UnitInput, TopicInput, TopicUpdate,
                       SemesterRead, SubjectRead, UnitRead, TopicRead, Workspace, SyllabusInput)
 
@@ -55,6 +55,10 @@ def register_resource(path, model, input_schema, output_schema, parent=None, par
 
     def remove(item_id: int, session: Session = Depends(get_session)):
         item = require(session, model, item_id)
+        if model in (Subject, Unit):
+            category = Document.subject_id if model is Subject else Document.unit_id
+            if session.scalar(select(Document.id).where(category == item_id).limit(1)) is not None:
+                raise HTTPException(409, "Move or remove the study materials in this category first.")
         if child and session.scalar(select(child.id).where(getattr(child, child_key) == item_id).limit(1)) is not None:
             raise HTTPException(409, "Remove the child items first. This action never deletes a whole hierarchy.")
         session.delete(item)

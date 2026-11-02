@@ -1,6 +1,6 @@
 # StudyMate AI
 
-A local, personalized study assistant for college students. **Phase 2: persistent academic workspace.** No paid services required.
+A local, personalized study assistant for college students. **Phase 3: document management.** No paid services required.
 
 ## What works now
 
@@ -9,10 +9,13 @@ A local, personalized study assistant for college students. **Phase 2: persisten
 - Search subjects, units, and topics within a semester; mark topics complete.
 - Import syllabus topics by pasting text or reviewing a UTF-8 TXT file.
 - Dashboard counts and subject progress come from actual saved records.
+- Upload PDF, PPTX, and TXT materials with subject/unit categorization; preserve originals and extracted text.
+- Search filenames and content, preview text by page/slide, download originals, change categories, and confirm removal.
+- Recent uploads appear on the dashboard.
 - Live backend/database connection status with retry and an unavailable state.
 - FastAPI `/api/health`, interactive API docs, SQLAlchemy sessions, and a local SQLite database.
 
-Document uploads, AI, quizzes, recommendations, and exam planning are future phases. No student records are seeded. The old Phase 1 fixtures remain isolated in `frontend/src/demo.ts` and are no longer displayed. TXT syllabus selection only imports topic names; it does not preserve an original document. Document storage and PDF/PPTX extraction arrive in Phase 3.
+AI, quizzes, recommendations, and exam planning are future phases. No student records are seeded. Old Phase 1 fixtures remain isolated in `frontend/src/demo.ts` and are not displayed. Syllabus TXT import in My subjects creates topic names; Study materials uploads preserve original files and source text. These are separate actions; uploading a syllabus does not automatically create or complete topics.
 
 ## Windows setup
 
@@ -80,11 +83,11 @@ FastAPI handles HTTP requests in Python. Pydantic defines the health response sh
 
 Important files: `frontend/src/main.tsx` (UI and navigation), `frontend/src/styles.css` (responsive design), `frontend/src/demo.ts` (sample records), `backend/app/main.py` (API), `backend/app/database.py` (database foundation), and `backend/tests/test_health.py` (API tests).
 
-Before Phase 3, learn HTTP multipart uploads, file validation, Python file paths, and database transactions. See ARCHITECTURE.md and PROJECT_PLAN.md for the next steps.
+Before Phase 4, learn embeddings, text chunking, vector similarity, and the difference between retrieving source text and generating an answer. See ARCHITECTURE.md and PROJECT_PLAN.md for the next steps.
 
 ## Limits
 
-Local development only; production deployment, authentication, dark mode, document storage, and AI are not part of Phase 1. Scanned PDFs will need a separate OCR pipeline when uploads arrive. Never delete the database as a routine reset; future schema changes must preserve student data.
+Local development only; production deployment, authentication, dark mode, OCR, and AI remain future work. Scanned PDFs require an additional OCR pipeline. Never delete the database as a routine reset; future schema changes must preserve student data.
 
 
 ## Phase 2 walkthrough
@@ -104,3 +107,34 @@ New important files: `backend/app/models.py` (tables and foreign keys), `schemas
 React sends JSON through Vite to FastAPI. Pydantic validates input, SQLAlchemy commits a transaction, and React reloads the saved workspace. A foreign key stores the parent record's ID, so every topic belongs to a real unit. Checkbox completion is self-reported progress, not a measure of mastery.
 
 The Phase 2 database upgrade is additive: startup creates four previously absent tables and never drops or recreates existing tables. It does not support changing existing table columns. Back up the SQLite file with the backend stopped before future schema changes; a versioned migration system must be introduced before altering this schema.
+
+
+## Phase 3 walkthrough
+
+If updating from Phase 2, install the updated lock file before restarting the backend:
+
+```powershell
+cd C:\StudyMate-Codex
+.\.venv\Scripts\python.exe -m pip install -r backend\requirements-lock.txt
+```
+
+Run the same two-terminal commands above. Open **Study materials**:
+
+1. Ensure a subject exists in My subjects, then choose **Upload material**.
+2. Select its subject and optionally a unit. Choose a text-based PDF, PPTX, or UTF-8 TXT file up to 20 MB, then upload. The UI reports uploading/extracting and any failure.
+3. Open **Preview text**. PDF page and PPTX slide numbers match the original. Use **Download original** to retrieve the preserved bytes. This is a text preview, not a visual reproduction of slide/PDF layouts.
+4. Search for a filename or phrase in its extracted text; narrow by subject/unit. Search is literal and case behavior follows SQLite LIKE (case-insensitive for ASCII).
+5. Use **Categorize** to move the material to another subject/unit. Incompatible unit/subject combinations are rejected.
+6. Refresh or restart the backend: records, original files, and extracted text remain. Recent uploads appear on Overview.
+7. A scanned/image-only PDF is stored with **Needs OCR**; empty text/PPTX content shows **No readable text**. Mixed PDFs can show warnings for pages without text. Original files remain downloadable. Text extraction does not assess factual accuracy.
+8. Removal asks for confirmation and removes the document record, extracted text, and original. It does not remove syllabus topics. Subjects/units with attached documents are protected until documents are moved or removed.
+
+Storage: metadata, complete extracted text, and page/slide sections are in SQLite; UUID-named originals are in `backend/data/uploads/`. Both are excluded from Git. No private filesystem paths are returned by the document API. Keep this unauthenticated prototype bound to 127.0.0.1.
+
+Limits: 20 MB per file, 21 MB total multipart request including overhead, 1,000 PDF pages/PPTX slides, and 2 million extracted characters (plus section separators). PPTX expanded ZIP content is capped at 100 MB/10,000 entries. PDFs must be unlocked; TXT must be UTF-8. Images, handwritten notes, diagrams, and slide speaker notes are not extracted. No OCR or AI is invoked. A timeout or connection loss can leave a completed upload on the server; refresh the library before retrying to avoid duplicates.
+
+New files: `backend/app/documents.py` (upload/storage/API), `extraction.py` (PyMuPDF/python-pptx extraction), `frontend/src/StudyMaterials.tsx` (library/editors), and `backend/tests/test_documents.py` (real parser and storage tests). React sends files as multipart FormData; FastAPI validates size/category/content, extracts text, writes the original, and commits metadata. The same endpoint layer retrieves previews and downloads; the upload directory is never mounted as public static content.
+
+Back up the whole `backend/data` directory with the backend stopped. Phase 3 adds a documents table without altering or dropping existing academic tables. File operations and SQLite commits are coordinated but not one atomic transaction across crashes: a crash can leave an orphan original or `.deleting` file. Keep these private and inspect against document records before manual cleanup; do not delete the uploads directory as a reset. Failed upload cleanup or final deletion cleanup issues produce a backend warning. A rare failure to unlink a staged file can leave private residual bytes even though its record is removed.
+
+Dependency note: PyMuPDF is supplied under AGPL/commercial licensing. This project uses the free open-source distribution; review its official license before distributing a derived application. See [PyMuPDF licensing](https://pymupdf.io/licensing). `python-pptx` reads slide text/tables; `python-multipart` parses browser uploads. The lock file records the tested Windows/Python 3.13 environment.

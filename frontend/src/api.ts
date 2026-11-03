@@ -9,7 +9,7 @@ export async function api<T>(path: string, method = 'GET', body?: unknown): Prom
   const multipart = body instanceof FormData;
   const response = await fetch(`${import.meta.env.VITE_API_BASE_URL ?? ''}/api${path}`, {
     method, headers: body && !multipart ? { 'Content-Type': 'application/json' } : undefined,
-    body: multipart ? body : body ? JSON.stringify(body) : undefined, signal: AbortSignal.timeout(multipart ? 120000 : 10000),
+    body: multipart ? body : body ? JSON.stringify(body) : undefined, signal: AbortSignal.timeout(path === '/ai/ask' ? 1800000 : multipart ? 120000 : 10000),
   });
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));

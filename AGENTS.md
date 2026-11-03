@@ -1,7 +1,7 @@
 # StudyMate AI development instructions
 
 - Read README.md, ARCHITECTURE.md, and PROJECT_PLAN.md before changes.
-- Implement one major phase at a time. Stop for user approval between phases. Current scope: Phase 3 approved and implemented. Phase 4 requires fresh user approval.
+- Implement one major phase at a time. Stop for user approval between phases. Current scope: Phase 4 approved; implementation and local-model verification in progress. Phase 5 requires fresh user approval.
 - Preserve the React/TypeScript/Vite/Tailwind/Lucide frontend and Python/FastAPI/Pydantic/SQLAlchemy/SQLite backend. Explain proposed stack changes first.
 - Keep free local AI (embeddings, vector store, Ollama) for Phase 4. Never fake model responses.
 - Use clear names, reusable components, typed API contracts, and small modules. Keep demo fixtures distinct from user data.
